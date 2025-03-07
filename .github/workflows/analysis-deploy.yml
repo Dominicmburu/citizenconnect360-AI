@@ -1,0 +1,26 @@
+name: Deploy Analysis Service
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'analysis/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Build and Push Docker Image
+        run: |
+          echo "${{ secrets.AWS_ACCESS_KEY_ID }}" | docker login --username AWS --password-stdin YOUR_ECR_URL
+          docker build -t analysis-service ./analysis
+          docker tag analysis-service YOUR_ECR_URL/analysis-service:latest
+          docker push YOUR_ECR_URL/analysis-service:latest
+
+      - name: Deploy to AWS ECS
+        run: |
+          aws ecs update-service --cluster your-cluster-name --service analysis-service --force-new-deployment
